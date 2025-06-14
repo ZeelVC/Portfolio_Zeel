@@ -2,53 +2,115 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const PARTICLE_COUNT = 80;
-const COLORS = ['#00ffe7', '#ff00e7', '#fff', '#00f0ff', '#ffb300'];
-
-function randomSpherePoint(radius) {
-  const u = Math.random();
-  const v = Math.random();
-  const theta = 2 * Math.PI * u;
-  const phi = Math.acos(2 * v - 1);
-  const x = radius * Math.sin(phi) * Math.cos(theta);
-  const y = radius * Math.sin(phi) * Math.sin(theta);
-  const z = radius * Math.cos(phi);
-  return [x, y, z];
-}
-
 const Particles = () => {
-  const meshRef = useRef();
-  const particles = useMemo(() => {
-    return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
-      const [x, y, z] = randomSpherePoint(3.5 + Math.random());
-      return {
-        position: [x, y, z],
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        scale: 0.08 + Math.random() * 0.12,
-        speed: 0.003 + Math.random() * 0.004,
-        phase: Math.random() * Math.PI * 2,
-      };
-    });
+  const particlesRef = useRef();
+  const ringsRef = useRef();
+
+  // Create particles
+  const particleCount = 500;
+  const positions = useMemo(() => {
+    const pos = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 5 + 1;
+      pos[i * 3] = Math.cos(theta) * radius;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 5;
+      pos[i * 3 + 2] = Math.sin(theta) * radius;
+    }
+    return pos;
+  }, []);
+
+  // Create energy rings
+  const ringCount = 3;
+  const rings = useMemo(() => {
+    const ringGeometries = [];
+    for (let i = 0; i < ringCount; i++) {
+      const geometry = new THREE.RingGeometry(1 + i * 0.5, 1.2 + i * 0.5, 64);
+      ringGeometries.push(geometry);
+    }
+    return ringGeometries;
   }, []);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
-    particles.forEach((p, i) => {
-      const t = state.clock.getElapsedTime() * p.speed + p.phase;
-      meshRef.current.children[i].position.x = p.position[0] + Math.sin(t) * 0.3;
-      meshRef.current.children[i].position.y = p.position[1] + Math.cos(t) * 0.3;
-      meshRef.current.children[i].position.z = p.position[2] + Math.sin(t * 0.7) * 0.2;
-    });
+    const time = state.clock.getElapsedTime();
+
+    // Animate particles
+    if (particlesRef.current) {
+      const positions = particlesRef.current.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const x = positions[i3];
+        const z = positions[i3 + 2];
+        const angle = Math.atan2(z, x);
+        const radius = Math.sqrt(x * x + z * z);
+        
+        // Spiral movement
+        const newAngle = angle + (0.1 / radius);
+        positions[i3] = Math.cos(newAngle) * radius;
+        positions[i3 + 2] = Math.sin(newAngle) * radius;
+        
+        // Vertical oscillation
+        positions[i3 + 1] = Math.sin(time * 2 + radius) * 0.2 + positions[i3 + 1];
+      }
+      particlesRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Animate rings
+    if (ringsRef.current) {
+      ringsRef.current.children.forEach((ring, i) => {
+        ring.rotation.z = time * (0.2 + i * 0.1);
+        ring.scale.setScalar(1 + Math.sin(time * 2 + i) * 0.1);
+      });
+    }
   });
 
   return (
-    <group ref={meshRef}>
-      {particles.map((p, i) => (
-        <mesh key={i} position={p.position}>
-          <sphereGeometry args={[p.scale, 16, 16]} />
-          <meshStandardMaterial emissive={new THREE.Color(p.color)} color={p.color} emissiveIntensity={2} transparent opacity={0.85} />
-        </mesh>
-      ))}
+    <group position={[0, -1.5, 0]}>
+      {/* Particles */}
+      <points ref={particlesRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={particleCount}
+            array={positions}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.02}
+          color="#00ffff"
+          transparent
+          opacity={0.6}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+
+      {/* Energy Rings */}
+      <group ref={ringsRef}>
+        {rings.map((geometry, i) => (
+          <mesh key={i} rotation={[Math.PI / 2, 0, 0]}>
+            <primitive object={geometry} />
+            <meshBasicMaterial
+              color="#00ffff"
+              transparent
+              opacity={0.3}
+              side={THREE.DoubleSide}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Central glow */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2, 2]} />
+        <meshBasicMaterial
+          color="#00ffff"
+          transparent
+          opacity={0.1}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
     </group>
   );
 };
