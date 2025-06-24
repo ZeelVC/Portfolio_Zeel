@@ -254,6 +254,13 @@ const CardWall = ({ links, active, setActive }) => {
   const radius = 4.2;
   const group = useRef();
   const N = links.length;
+
+  useFrame((state) => {
+    if (group.current) {
+      group.current.rotation.y = state.clock.getElapsedTime() * 0.1;
+    }
+  });
+
   return (
     <group ref={group}>
       {links.map((link, index) => {
