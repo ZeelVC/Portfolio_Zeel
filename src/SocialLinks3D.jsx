@@ -7,7 +7,7 @@ import {
   Html,
   OrbitControls,
   Environment,
-  useTexture
+  Image
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSpring, animated } from '@react-spring/three';
@@ -92,34 +92,33 @@ const getSocialIcon = (title) => {
   }
 };
 
+// Helper to get the icon URL for each platform
+const getIconUrl = (title) => {
+  switch (title.toLowerCase()) {
+    case 'linkedin':
+      return `https://api.iconify.design/mdi/linkedin.svg?color=%230077b5`;
+    case 'github':
+      return `https://api.iconify.design/mdi/github.svg?color=%23ffffff`;
+    case 'twitter':
+      return `https://api.iconify.design/mdi/twitter.svg?color=%231da1f2`;
+    case 'instagram':
+      return `https://api.iconify.design/mdi/instagram.svg?color=%23e4405f`;
+    case 'resume':
+      return `https://api.iconify.design/mdi/file-download-outline.svg?color=%2364ffda`;
+    default:
+      return '';
+  }
+};
+
 // Card Item Component for Social Links
 const CardItem = ({ index, link, position, active, onClick, rotation }) => {
-  const ref = useRef();
+  const groupRef = useRef();
   const [hovered, setHovered] = useState(false);
-  const [clicked, setClicked] = useState(false);
   
-  // Generate vibrant colors based on index
-  const colors = useMemo(() => [
-    "#0077b5", // LinkedIn blue
-    "#333333", // GitHub dark
-    "#64ffda", // Theme cyan
-    "#1da1f2", // Twitter blue
-    "#e4405f"  // Instagram pink/purple
-  ], []);
-  
-  // Placeholder for image texture (replace with actual image later)
-  // const imageTexture = useTexture('path/to/image.jpg');
-  
-  // Animation for hover state
+  // Animation for hover state (scale)
   const { scale } = useSpring({
-    scale: hovered ? 1.1 : 1,
+    scale: hovered ? 1.2 : 1,
     config: { mass: 1, tension: 280, friction: 60 }
-  });
-  
-  // Animation for icon float-in effect
-  const iconSpring = useSpring({
-    iconScale: hovered ? 1 : 0,
-    config: { mass: 1, tension: 200, friction: 20 }
   });
   
   // Animation for name float-in and color effect
@@ -128,102 +127,55 @@ const CardItem = ({ index, link, position, active, onClick, rotation }) => {
     color: hovered ? '#00ffff' : '#e0e0e0',
     config: { mass: 1, tension: 200, friction: 20 }
   });
-  
-  // Render the icon as an HTML overlay (static, always visible)
-  const icon = getSocialIcon(link.title);
-  const isResume = link.title.toLowerCase() === 'resume';
+
+  const iconUrl = getIconUrl(link.title);
   
   useFrame((state) => {
-    // Gentle floating animation for the card itself
-    if (ref.current) {
-      ref.current.position.y = position[1] + Math.sin(state.clock.getElapsedTime() * 0.5 + index * 0.5) * 0.05;
+    if (groupRef.current) {
+      // Gentle floating animation
+      groupRef.current.position.y = position[1] + Math.sin(state.clock.getElapsedTime() * 0.5 + index * 0.5) * 0.05;
+      
+      // Parallax rotation effect on hover
+      if (hovered) {
+        const { x, y } = state.mouse;
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, rotation[1] + x * 0.3, 0.1);
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotation[0] - y * 0.3, 0.1);
+      } else {
+        // Return to original rotation
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, rotation[1], 0.1);
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotation[0], 0.1);
+      }
     }
   });
   
   const handleClick = () => {
-    setClicked(true);
     window.open(link.url, '_blank');
-    setTimeout(() => setClicked(false), 300);
     if (onClick) onClick(index);
   };
   
   return (
-    <animated.mesh
-      ref={ref}
+    <animated.group
+      ref={groupRef}
       position={position}
-      rotation={rotation}
       scale={scale}
       onClick={handleClick}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
-      castShadow
+      rotation={rotation}
     >
-      {/* Transparent frame with crazy border (placeholder) */}
-      <boxGeometry args={[2.7, 2.1, 0.2]} />
-      <meshStandardMaterial 
-        color={isResume ? 'white' : '#fff'}
-        metalness={0.2}
-        roughness={0.8}
+      {/* 3D Icon Image */}
+      <Image
+        url={iconUrl}
         transparent
-        opacity={isResume ? 0 : 0.25}
-        emissive={colors[index % colors.length]}
-        emissiveIntensity={0}
-        side={THREE.DoubleSide}
+        scale={[2.5, 2.5]}
+        opacity={0.9}
         toneMapped={false}
+        sdf
       />
-      {/* Placeholder for image texture (uncomment and set map for real image) */}
-      {/*
-      <meshBasicMaterial
-        attachArray="material"
-        map={imageTexture}
-        transparent
-        opacity={1}
-      />
-      */}
-      {/* Social media icon as static Html overlay */}
-      {icon && (
-        <Html
-          position={[1.35, 1.05, 0.25]}
-          center
-          style={{
-            pointerEvents: 'none',
-            zIndex: 10,
-          }}
-        >
-          <animatedWeb.div
-            style={{
-              transform: iconSpring.iconScale.to(s => `scale(${s})`),
-              transition: 'transform 0.15s',
-              display: 'inline-block',
-            }}
-          >
-            <div style={{ filter: 'drop-shadow(0 0 8px #64ffda)', background: 'rgba(10,25,47,0.7)', borderRadius: '50%', padding: 4 }}>
-              {icon}
-            </div>
-          </animatedWeb.div>
-        </Html>
-      )}
-      {/* Resume screenshot preview (front of frame) */}
-      {isResume && (
-        <Html
-          position={[0, 0, 0.11]}
-          center
-          style={{ pointerEvents: 'none', zIndex: 9 }}
-        >
-          <div style={{ width: 270, height: 210, overflow: 'hidden', background: 'transparent' }}>
-            <iframe
-              src="/assets/Resume_Zeel_Chotaliya.pdf#toolbar=0&navpanes=0&scrollbar=0"
-              width="270"
-              height="210"
-              style={{ border: 'none', display: 'block' }}
-              title="Resume Preview"
-            />
-          </div>
-        </Html>
-      )}
+      
       {/* Name at the bottom with float-in and color effect */}
       <Html
-        position={[0, -1.25, 0.25]}
+        position={[0, -1.4, 0]}
         center
         style={{ pointerEvents: 'none', zIndex: 10 }}
       >
@@ -245,7 +197,7 @@ const CardItem = ({ index, link, position, active, onClick, rotation }) => {
           {link.title}
         </animatedWeb.div>
       </Html>
-    </animated.mesh>
+    </animated.group>
   );
 };
 
