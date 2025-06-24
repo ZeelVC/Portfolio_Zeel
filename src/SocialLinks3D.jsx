@@ -323,7 +323,7 @@ const Scene = () => {
 // Main component - can be directly included in your existing app
 const SocialLinks3D = () => {
   return (
-    <div id="connect" className="h-screen bg-[#050816] relative overflow-hidden">
+    <div id="connect" className="h-screen bg-[#050816] relative overflow-hidden hero-container">
       {/* Background with gradient and grid, matching Hero */}
       <div className="hero-background">
         <div className="hero-grid" />
