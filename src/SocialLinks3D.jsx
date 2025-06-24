@@ -289,19 +289,19 @@ const Scene = () => {
     },
     { 
       title: "LinkedIn", 
-      url: "https://linkedin.com/in/zeelchotaliya"
+      url: "https://www.linkedin.com/in/zeel-chotaliya-95b940237/"
     },
     { 
       title: "GitHub", 
-      url: "https://github.com/zeelchotaliya"
+      url: "https://github.com/ZeelVC"
     },
     { 
       title: "Twitter", 
-      url: "https://twitter.com/zchotaliya"
+      url: "https://x.com/Zeel_Chotaliya?t=LpukAc_JpV9uYLTna7iTZw&s=09"
     },
     { 
       title: "Instagram", 
-      url: "https://instagram.com/zeel.chotaliya"
+      url: "https://www.instagram.com/zeelvc/"
     }
   ];
 
