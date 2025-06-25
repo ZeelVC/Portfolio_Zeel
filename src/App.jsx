@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Hero from './Hero';
 import SocialLinks3D from './SocialLinks3D';
+import TimeStone from './TimeStone';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,11 @@ const App = () => {
         {/* Social Links Section */}
         <section className="h-screen">
           <SocialLinks3D />
+        </section>
+
+        {/* Contact Section */}
+        <section className="h-screen">
+          <TimeStone />
         </section>
 
         {/* Back to top button */}

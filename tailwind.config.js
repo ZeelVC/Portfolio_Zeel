@@ -28,6 +28,7 @@ export default {
       animation: {
         'float': 'float 4s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite',
+        'spin-slow': 'spin 12s linear infinite',
       },
       keyframes: {
         float: {

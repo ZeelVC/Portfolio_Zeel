@@ -244,7 +244,7 @@ const Scene = () => {
   const socialLinks = [
     { 
       title: "Resume", 
-      url: "https://docs.google.com/document/d/1xepBzWF8TYz-loPCq_TMO3Hd9XOuGSxz/preview"
+      url: "/assets/Resume_Zeel_Chotaliya.pdf"
     },
     { 
       title: "LinkedIn", 
